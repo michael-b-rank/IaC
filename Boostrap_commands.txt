@@ -1,0 +1,13 @@
+export ORGANIZATION="labuser3213931765833764278"
+export TOKEN="vskzPVM19bczyuI2golCP5YneBfhVrDMuWIJvdcm0zU7uCPDTBhdJQQJ99BLACAAAAAvoAeBAAASAZDO3MLb"
+export RG="rg_sb_eastus_321393_1_176583376880"
+
+./bootstrap.sh --resource-group=$RG --storage-account=whizlabsbootstrap --container=tfstate --organization=$ORGANIZATION --pat-token="$TOKEN"
+
+
+01 Create Terraform code to deploy to AzureRM and AzureDevOps. Must manually create before pipeline can run
+02 Add to Job Pipeline logic to
+   A.) pass an array for jobs [VALIDATE,PLAN] in order to have in a single Stage
+   B.) FIX: KICS Scan = Figure out the right WorkingDirectory '' scans every module
+   C.) Add logic to Main Pipeline to find only Modified/touched files, then get it's Directory to pass to WorkingDirectory
+	

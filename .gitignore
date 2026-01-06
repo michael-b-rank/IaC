@@ -1,0 +1,27 @@
+# Terraform/Terragrunt Ignores
+
+# 1. Terraform State and Crash Files
+*.tfstate
+*.tfstate.*
+crash.log
+.terraform/
+
+# 2. Terraform Dependency Lock File (Requested)
+# This file tracks provider and module versions. Ignore if you manage
+# dependencies outside of the main repository.
+.terraform.lock.hcl
+
+# 3. Terragrunt Cache (Requested)
+# Recursively ignore the local cache directory created by terragrunt
+# when it downloads configurations.
+**/.terragrunt-cache/
+
+# 4. Terraform Provider Directories (Requested)
+# Recursively ignore the downloaded provider binaries within .terraform/
+# This ensures that even if a .terraform/ directory exists, the large
+# provider downloads are excluded.
+.terraform/providers/
+
+# 5. Backup Files and Logs
+*.backup
+*.log

@@ -1,0 +1,53 @@
+# template-kics.yml
+parameters:
+- name: workingDirectory
+  type: string
+- name: git_repo_modules
+  type: string
+
+jobs:
+- job: Scan
+  displayName: 'KICS'
+  container: checkmarx/kics:debian # Use the official KICS image
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: ${{parameters.git_repo_modules }}
+    displayName: 'Check out modules repo'
+
+  - script: |
+      FULL_SCAN_PATH="$(Build.SourcesDirectory)/${{parameters.workingDirectory}}"
+      echo "build.SourcesDirectory = $(Build.SourcesDirectory)"
+      echo "parameters.workingDirectory = ${{parameters.workingDirectory}}"
+      echo "Starting KICS scan on the path $FULL_SCAN_PATH"
+      echo ""
+      ls -lR
+      echo "--ci tells KICS to fail the pipeline on findings"
+      echo "-p is the Input Path to Scan"
+      echo "-o is the Output Report Path"
+      echo "--report-formats sarif exports results in a standard format"
+      echo "--output-name ensure the output file is named results and not appended with additional info"
+      echo ""
+      /app/bin/kics scan \
+        --ci \
+        -p "$FULL_SCAN_PATH" \
+        -o $(Pipeline.Workspace)/KICS_Results \
+        --report-formats sarif \
+        --type terraform \
+        --ignore-on-exit results \
+        --output-name results
+    displayName: 'Run KICS Scan'
+
+  # Publish the SARIF report for viewing in Azure DevOps
+  - task: PublishBuildArtifacts@1 # <<< GENERIC VERSION
+    displayName: 'Publish KICS SARIF Report (as Generic Artifact)'
+    inputs:
+      pathToPublish: $(Pipeline.Workspace)/KICS_Results/results.sarif
+      artifactName: KICS_SARIF_Report
+  #- task: PublishCodeAnalysisResults@1 # <<<< CAN"T USE IN SANDBOX, IF IN REAL ENV. ENABLE IN MARKETPLACE 'Code Analysis Results'
+  #  displayName: 'Publish KICS SARIF Report to ADO'
+  #  inputs:
+  #    toolName: 'KICS'
+  #    toolVersion: '1.x'
+  #    codeAnalysisResults: $(Pipeline.Workspace)/KICS_RESULTS/results.sarif

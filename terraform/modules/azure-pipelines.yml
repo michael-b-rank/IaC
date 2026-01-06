@@ -1,0 +1,28 @@
+# azure-pipeline.yml
+# Designed for MODULES-REPO
+name: main-pipeline
+trigger:
+  - main
+
+variables:
+  - group: env
+
+pool:
+  vmImage: ubuntu-latest
+
+resources:
+  repositories:
+    - repository: templateRepo #Alias to Repo
+      type: git
+      name: bootstrap/templates #Project/RepoName
+      ref: main
+    - repository: coreRepo
+      type: git
+      name: bootstrap/azure-iac-core
+      ref: main
+
+extends:
+  template: templates/02_child_pipelines/modules-repo.yml@templateRepo
+  parameters:
+    workingDirectory: '' # SCAN Recurisvely all Modules.
+# Add logic

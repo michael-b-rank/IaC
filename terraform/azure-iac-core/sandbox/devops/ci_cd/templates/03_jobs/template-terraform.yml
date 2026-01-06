@@ -1,0 +1,62 @@
+# template-terragrunt.yml
+parameters:
+- name: workingDirectory
+  type: string
+- name: git_repo_modules
+  type: string
+- name: jobs
+  type: string
+- name: azure_service_connection_name
+  type: string
+  default: 'svc_connection_azure_rm'
+
+jobs:
+# ====================================================================
+# JOB: Validate
+# ====================================================================
+- job: Validate
+  condition: eq('${{parameters.jobs}}', 'Validate')
+  displayName: 'terraform validate'
+  container: 'devopsinfra/docker-terragrunt:azure-tf-latest'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: ${{parameters.git_repo_modules}}
+    displayName: 'Check out modules repo'
+
+  - task: AzureCLI@2
+    displayName: 'Run terraform validate'
+    inputs:
+      azureSubscription: ${{parameters.azure_service_connection_name}}
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        cd ${{parameters.workingDirectory}}
+        terraform init
+        terraform validate
+
+# ====================================================================
+# JOB: Format
+# ====================================================================
+- job: Format
+  condition: eq('${{parameters.jobs}}', 'Format')
+  displayName: 'terraform format'
+  container: 'devopsinfra/docker-terragrunt:azure-tf-latest'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: ${{parameters.git_repo_modules}}
+    displayName: 'Check out modules repo'
+
+  - task: AzureCLI@2
+    displayName: 'Run terraform format'
+    inputs:
+      azureSubscription: ${{parameters.azure_service_connection_name}}
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        cd ${{parameters.workingDirectory}}
+        terraform init
+        terraform fmt --check --diff

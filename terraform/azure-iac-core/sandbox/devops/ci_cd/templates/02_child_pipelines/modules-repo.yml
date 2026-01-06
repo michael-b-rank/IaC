@@ -1,0 +1,41 @@
+# modules-repo.yml
+parameters:
+  - name: workingDirectory
+
+resources:
+  repositories:
+    - repository: templateJobRepo #Alias to Repo
+      type: git
+      name: bootstrap/templates #Project/RepoName
+      ref: main
+
+# Stage 1 = Validate the Terraform Code
+stages:
+  - stage: Validate
+    displayName: 'Terraform Validate'
+    jobs:
+      - template: templates/03_jobs/template-terraform.yml@templateJobRepo
+        parameters:
+          jobs: Validate
+          workingDirectory: ${{parameters.workingDirectory}}
+          git_repo_modules: self
+
+# Stage 2 = Format the Terraform Code
+  - stage: Format
+    displayName: 'Terraform Format'
+    dependsOn: Validate
+    jobs:
+      - template: templates/03_jobs/template-terraform.yml@templateJobRepo
+        parameters:
+          jobs: Format
+          workingDirectory: ${{parameters.workingDirectory}}
+          git_repo_modules: self
+# Stage 3 = Perform KICS on the Terraform Code
+  - stage: KICS
+    displayName: 'IaC Security Scan'
+    dependsOn: Format
+    jobs:
+     - template: templates/03_jobs/template-kics.yml@templateJobRepo
+       parameters:
+         workingDirectory: ${{parameters.workingDirectory}}
+         git_repo_modules: self

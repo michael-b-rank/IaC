@@ -1,0 +1,8 @@
+alias tgaa='terragrunt apply --terragrunt-provider-cache-dir /c/repos/DocHiverLab/terraform/providers --auto-approve'
+alias tgp='terragrunt plan --terragrunt-provider-cache-dir /c/repos/DocHiverLab/terraform/providers'
+alias statedir='cd /c/repos/DocHiverLab/terraform/state/'
+alias modulesdir='cd /c/repos/DocHiverLab/terraform/modules/'
+alias providersdir='cd /c/repos/DocHiverLab/terraform/providers/'
+alias azcoredir='cd /c/repos/DocHiverLab/terraform/azure-iac-core'
+alias azl='az login --use-device-code'
+alias tgc='rm -rf .terragrunt-cache; rm .terraform.lock.hcl'

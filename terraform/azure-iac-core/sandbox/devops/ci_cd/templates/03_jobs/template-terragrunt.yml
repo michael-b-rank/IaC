@@ -1,0 +1,113 @@
+# template-terragrunt.yaml
+parameters:
+- name: workingDirectory
+  type: string
+- name: planFileName
+  type: string
+  default: 'terraform.tfplan'
+- name: git_repo_modules
+  type: string
+- name: git_repo_core
+  type: string
+  default: ''
+- name: jobs
+  type: string
+  
+
+jobs:
+# ====================================================================
+# JOB: Validate
+# ====================================================================
+- job: Validate
+  condition: eq('${{parameters.jobs}}', 'Validate')
+  displayName: 'terragrunt validate'
+  #container: $(container)
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: ${{parameters.git_repo_core}}
+    displayName: 'Check Out azure-iac-core repo'
+
+  - checkout: ${{parameters.git_repo_modules}}
+    displayName: 'Check out modules repo'
+
+  - task: AzureCLI@2
+    displayName: 'Run Terragrunt validate'
+    inputs:
+      #azureSubscription: 'azure service connection name'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        cd ${{parameters.workingDirectory}}
+        terragrunt init
+        terragrunt validate
+
+# ====================================================================
+# JOB: Format
+# ====================================================================
+- job: Format
+  condition: eq('${{parameters.jobs}}', 'Format')
+  displayName: 'terragrunt format'
+  #container: $(container)
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+
+  - checkout: ${{parameters.git_repo_core}}
+    displayName: 'Check Out azure-iac-core repo'
+
+  - checkout: ${{parameters.git_repo_modules}}
+    displayName: 'Check out modules repo'
+
+  - task: AzureCLI@2
+    displayName: 'Run Terragrunt format'
+    inputs:
+      #azureSubscription: 'azure service connection name'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        cd ${{parameters.workingDirectory}}
+        terragrunt init
+        terragrunt fmt --check --diff
+
+# ====================================================================
+# JOB: Plan
+# ====================================================================
+- job: Plan
+  condition: eq('${{parameters.jobs}}', 'Plan')
+  displayName: 'Terragrunt Plan'
+  #container: $(container)
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+
+  - checkout: ${{parameters.git_repo_core}}
+    displayName: 'Check Out azure-iac-core repo'
+
+  - checkout: ${{parameters.git_repo_modules}}
+    displayName: 'Check out modules repo'
+
+  - task: AzureCLI@2
+    displayName: 'Run Terragrunt Plan'
+    inputs:
+      #azureSubscription: 'azure service connection name'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        PLAN_ARTIFACT_NAME="plan-artifact"
+
+        cd ${{parameters.workingDirectory}}
+        terragrunt init
+
+        # Plan and output to file
+        terragrunt plan -out $(planFileName)
+
+        # Publish Plan as Artifact
+        mkdir -p $(Pipeline.workspace)/$PLAN_ARTIFACT_NAME/
+        cp $(planFileName) $(Pipeline.Workspace)/$PLAN_ARTIFACT_NAME/
+  - publish: $(Pipeline.Workspace)/plan-artifact
+    artifact: 'tf-plan-${{parameters.workingDirectory}}'
+    displayName: 'Publish Terraform Plan Artifact'
