@@ -1,0 +1,55 @@
+# Use a base that already includes Terraform, Terragrunt, and Cloud CLIs
+FROM devopsinfra/docker-terragrunt:latest
+
+USER root
+
+# 1. Inject Internal CA Certificate
+# Place your 'internal-ca.crt' in the same folder as this Dockerfile
+COPY internal-ca.crt /usr/local/share/ca-certificates/internal-ca.crt
+
+RUN chmod 644 /usr/local/share/ca-certificates/internal-ca.crt && \
+    update-ca-certificates
+
+# 2. Tool Versions
+ARG PACKER_VERSION=1.11.2
+ARG SOPS_VERSION=v3.9.4
+ARG RANCHER_CLI_VERSION=v2.10.1
+
+# 3. Core Automation (Packer, SOPS, Rancher CLI)
+RUN curl -fsSL https://releases.hashicorp.com{PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip -o packer.zip && \
+    unzip packer.zip -d /usr/local/bin/ && \
+    curl -L https://github.com{SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64 -o /usr/local/bin/sops && \
+    chmod +x /usr/local/bin/sops && \
+    curl -LO https://github.com{RANCHER_CLI_VERSION}/rancher-linux-amd64-${RANCHER_CLI_VERSION}.tar.gz && \
+    tar -xzf rancher-linux-amd64-${RANCHER_CLI_VERSION}.tar.gz && \
+    mv rancher-*/rancher /usr/local/bin/ && \
+    rm -rf packer.zip rancher-*
+
+    # Add Kerberos support for Domain Authentication
+RUN apt-get update && apt-get install -y krb5-user libkrb5-dev && rm -rf /var/lib/apt/lists/*
+
+# Copy the config file
+COPY krb5.conf /etc/krb5.conf
+
+
+# 4. Harbor CLI (Pulls binary from official sandbox image)
+COPY --from=registry.goharbor.io/harbor-cli/harbor-cli:latest /harbor /usr/local/bin/harbor
+
+# 5. Ansible & Security (Ansible, WinRM support, Checkov, Trivy)
+RUN pip3 install --no-cache-dir ansible pywinrm checkov ansible-lint && \
+    ansible-galaxy collection install microsoft.ad ansible.windows community.docker community.general && \
+    curl -sfL https://raw.githubusercontent.com | sh -s -- -b /usr/local/bin
+
+# 6. PowerShell Core & Cloud Modules (Az & AWS)
+RUN wget -q "https://packages.microsoft.com(lsb_release -rs)/packages-microsoft-prod.deb" && \
+    dpkg -i packages-microsoft-prod.deb && \
+    apt-get update && apt-get install -y powershell && \
+    pwsh -Command "Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted; \
+    Install-Module -Name Az, AWS.Tools.Common, AWS.Tools.EC2 -Force -Scope AllUsers" && \
+    rm packages-microsoft-prod.deb
+
+# 7. Initialize Packer Plugins (Pre-cache Hyper-V plugin)
+RUN packer plugins install github.com/hashicorp/hyperv
+
+# Final check
+RUN packer --version && ansible --version && pwsh -v && rancher --version && harbor version
