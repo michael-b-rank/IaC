@@ -1,10 +1,12 @@
 // --- WINDOWS SOURCE ---
 source "hyperv-iso" "windows-server" {
+  
   // Use Common Vars
   cpus         = var.common_cpus
   memory       = var.common_memory
+  generation  =  var.common_generation
   switch_name  = var.common_switch
-  output_directory = "${var.common_output_path}/${var.win_image_name}"
+  #output_directory = "${var.common_output_path}/${var.win_image_name}"
   
   // Use Windows Specific Vars
   vm_name      = var.win_image_name
@@ -24,12 +26,14 @@ source "hyperv-iso" "windows-server" {
       ProductKey        = var.win_productkey
       EditionIndexKey   = var.win_edition_index_key
       EditionIndexValue = var.win_edition_index_value
-      // Note: ComputerName is intentionally omitted per your correct template
     })
   }
 
   // Boot config - Static Script
-  cd_files = ["${path.root}/Common/scripts/powershell/enable-winrm.ps1","${path.root}/Common/scripts/powershell/install.Chocolatey.ps1"]
+  cd_files = ["${path.root}/Common/scripts/powershell/enable-winrm.ps1","${path.root}/Common/scripts/powershell/install.Chocolatey.ps1","${path.root}/Common/scripts/powershell/install-updates.ps1"]
+
+  boot_wait    = "2s"
+  boot_command = ["<space><space><space><space><space>"]
 
   shutdown_command = "powershell -Command \"Stop-Computer -Force\""
 }
@@ -44,7 +48,7 @@ source "hyperv-iso" "ubuntu-server" {
   cpus         = var.common_cpus
   memory       = var.common_memory
   switch_name  = var.common_switch
-  output_directory = "${var.common_output_path}/${var.lin_ubuntuimage_name}"
+  #output_directory = "${var.common_output_path}/${var.lin_ubuntuimage_name}"
 
   
   // Use Ubuntu Specific Vars
@@ -106,7 +110,7 @@ source "hyperv-iso" "almalinux-server" {
   generation       = 2
   switch_name      = var.common_switch
   enable_secure_boot = false      // Secure Boot can block the Kickstart handoff on some ISOs
-  output_directory = "${var.common_output_path}/${var.lin_almaimage_name}"
+  #output_directory = "${var.common_output_path}/${var.lin_almaimage_name}"
   
   // --- Image & Name ---
   vm_name          = var.lin_almaimage_name

@@ -28,6 +28,16 @@ variable "common_output_path" {
   default = "./output"
 }
 
+variable "common_generation" {
+  type = number
+  default = 2
+}
+
+variable "common_enable_secure_boot" {
+  type = bool
+  default = false
+}
+
 variable "vm_guest_packages" {
   type    = list(string)
   default = ["linux-image-virtual", "linux-tools-virtual", "linux-cloud-tools-virtual"] # Hyper-V Packages for Ubuntu  
