@@ -17,4 +17,4 @@ Add-WUServiceManager -ServiceID "7971f918-a847-4430-9279-4b52d1ef396e" -Confirm:
 # -AutoReboot: Allows the module to handle reboots if needed
 # -Install: Executes the installation
 Write-Host "Checking for and installing updates... This may take a while."
-Get-WindowsUpdate -AcceptAll -Install -AutoReboot
+Get-WindowsUpdate -AcceptAll -Install
